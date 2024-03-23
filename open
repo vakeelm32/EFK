@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opensearch
+  namespace: default  # Update the namespace if needed
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: opensearch
+  template:
+    metadata:
+      labels:
+        app: opensearch
+    spec:
+      containers:
+      - name: opensearch
+        image: opensearchproject/opensearch:${OPENSEARCH_VERSION:-latest}
+        ports:
+        - containerPort: 9200
+          name: rest
+        - containerPort: 9600
+          name: inter-node
+        env:
+        - name: discovery.type
+          value: single-node
+        - name: node.name
+          value: opensearch
+        - name: OPENSEARCH_JAVA_OPTS
+          value: "-Xms512m -Xmx512m"
+        volumeMounts:
+        - name: opensearch-data
+          mountPath: /usr/share/opensearch/data
+      volumes:
+      - name: opensearch-data
+        emptyDir: {}
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: opensearch
+  namespace: default  # Update the namespace if needed
+spec:
+  selector:
+    app: opensearch
+  ports:
+    - protocol: TCP
+      port: 9200
+      targetPort: 9200
+    - protocol: TCP
+      port: 9600
+      targetPort: 9600
+  type: NodePort  # Expose service outside of Minikube
