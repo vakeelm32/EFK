@@ -53,3 +53,49 @@ spec:
       port: 9600
       targetPort: 9600
   type: NodePort  # Expose service outside of Minikube
+
+
+
+
+
+
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opensearch-dashboards
+  namespace: default  # Update the namespace if needed
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: opensearch-dashboards
+  template:
+    metadata:
+      labels:
+        app: opensearch-dashboards
+    spec:
+      containers:
+      - name: opensearch-dashboards
+        image: opensearchproject/opensearch-dashboards:${OPENSEARCH_DASHBOARDS_VERSION:-latest}
+        ports:
+        - containerPort: 5601
+          name: http
+        env:
+        - name: OPENSEARCH_HOSTS
+          value: '["http://opensearch:9200"]'  # Use HTTP instead of HTTPS
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: opensearch-dashboards
+  namespace: default  # Update the namespace if needed
+spec:
+  selector:
+    app: opensearch-dashboards
+  ports:
+    - protocol: TCP
+      port: 5601
+      targetPort: 5601
+  type: NodePort  # Expose service outside of Minikube
+
