@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tomcat-spring-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tomcat-spring
+  template:
+    metadata:
+      labels:
+        app: tomcat-spring
+    spec:
+      containers:
+      - name: tomcat-spring
+        image: techvakeelm32/tomcat-spring:latest
+        ports:
+        - containerPort: 8080
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tomcat-spring-service
+spec:
+  type: NodePort
+  ports:
+    - port: 8080
+      targetPort: 8080
+      nodePort: 30180  # Specify the desired node port here
+  selector:
+    app: tomcat-spring

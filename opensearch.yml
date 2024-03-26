@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opensearch
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: opensearch
+  template:
+    metadata:
+      labels:
+        app: opensearch
+    spec:
+      containers:
+      - name: opensearch
+        image: opensearchproject/opensearch:latest
+        ports:
+        - containerPort: 9200
+          name: rest
+        - containerPort: 9600
+          name: inter-node
+        env:
+        - name: discovery.type
+          value: single-node
+        - name: node.name
+          value: opensearch
+        - name: OPENSEARCH_JAVA_OPTS
+          value: "-Xms512m -Xmx512m"
+        - name: OPENSEARCH_INITIAL_ADMIN_PASSWORD
+          value: "AmericA323232111"  # Replace with your desired password
+        - name: DISABLE_INSTALL_DEMO_CONFIG
+          value: "true"  # Disable SSL/TLS for HTTP transport
+        - name: DISABLE_SECURITY_PLUGIN
+          value: "true"  # Disable SSL/TLS for transport protocol
+        volumeMounts:
+        - name: opensearch-data
+          mountPath: /usr/share/opensearch/data
+      volumes:
+      - name: opensearch-data
+        emptyDir: {}
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: opensearch
+  namespace: default
+spec:
+  selector:
+    app: opensearch
+  type: NodePort
+  ports:
+    - name: http
+      port: 9200
+      targetPort: 9200
+      nodePort: 30000  # Choose a nodePort number (for example, 30000)
+    - name: transport
+      port: 9300
+      targetPort: 9300
+      nodePort: 30001  # Choose a different nodePort number (for example, 30001)

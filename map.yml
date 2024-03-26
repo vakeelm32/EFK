@@ -1,0 +1,66 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: fluentd-config
+  labels:
+    addonmanager.kubernetes.io/mode: Reconcile
+data:
+  system.conf: |-
+    <system>
+      root_dir /tmp/fluentd-buffers/
+    </system>
+  containers.input.conf: |-
+    <source>
+      @id fluentd-containers.log
+      @type tail
+      path /var/log/containers/*.log
+      pos_file /var/log/es-containers.log.pos
+      tag raw.kubernetes.*
+      read_from_head true
+      <parse>
+        @type multi_format
+        <pattern>
+          format json
+          time_key time
+          time_format %Y-%m-%dT%H:%M:%S.%NZ
+        </pattern>
+        <pattern>
+          format /^(?<time>.+) (?<stream>stdout|stderr) [^ ]* (?<log>.*)$/
+          time_format %Y-%m-%dT%H:%M:%S.%N%:z
+        </pattern>
+      </parse>
+    </source>
+    ...
+  system.input.conf: |-
+    <source>
+      @id minion
+      @type tail
+      format /^(?<time>[^ ]* [^ ,]*)[^\[]*\[[^\]]*\]\[(?<severity>[^ \]]*) *\] (?<message>.*)$/
+      time_format %Y-%m-%d %H:%M:%S
+      path /var/log/salt/minion
+      pos_file /var/log/salt.pos
+      tag salt
+    </source>
+    ...
+  forward.input.conf: |-
+    <source>
+      @id forward
+      @type forward
+    </source>
+
+  output.conf: |-
+    <match **>
+          @type opensearch
+          host 127.0.0.1
+          port 55808
+          password AmericA323232111
+          index_name fluentd-apache-loging
+          ssl_verify false
+          include_tag_key true
+          flush_interval 10s
+          <buffer>
+            @type file
+            path /var/log/fluentd/buffer/apache_log
+            flush_interval 30s
+          </buffer>
+    </match>
